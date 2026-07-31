@@ -18,6 +18,21 @@ namespace SqlSugar.GBase
 
             }
         }
+        protected override string ToSingleSqlString(List<IGrouping<int, DbColumnInfo>> groupList)
+        {
+            // copy the SugarColumn(ColumnDataType) to  parameter.TypeName
+            var bigObjectColumns = groupList.ToList().First().Where(o => !string.IsNullOrEmpty(o.DataType)).ToList();
+            foreach (var column in bigObjectColumns)
+            {
+                var columnName = Builder.SqlParameterKeyWord + column.DbColumnName;
+                var param = this.Parameters.Where(o => string.Compare(o.ParameterName, columnName) == 0).FirstOrDefault();
+                if (param.HasValue())
+                {
+                    param.TypeName = column.DataType.ToLower();
+                }
+            }
+            return base.ToSingleSqlString(groupList);
+        }
         protected override string TomultipleSqlString(List<IGrouping<int, DbColumnInfo>> groupList)
         {
             if (groupList == null || groupList.Count == 0)
@@ -173,9 +188,9 @@ namespace SqlSugar.GBase
                 }
                 else if (value is bool)
                 {
-                    if (GBaseConfig.IsMySqlMode(this.Context))
+                    if (GBaseConfig.IsMySqlMode)
                     {
-                        return string.Format("CAST({0} AS signed)", value.ObjToBool() ? 1 : 0);
+                        return string.Format("{0}", value.ObjToBool() ? 1 : 0);
                     }
                     return string.Format("CAST({0} AS boolean)", value.ObjToBool() ? 1 : 0);
                 }

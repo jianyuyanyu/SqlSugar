@@ -17,8 +17,8 @@ namespace SqlSugar.GBase
         {
             base.DbMehtods = new GBaseMethod(this);
         }
-        public override string SqlTranslationLeft { get { return GBaseConfig.SqlTranslationLeft(this?.SugarContext?.Context); } }
-        public override string SqlTranslationRight { get { return GBaseConfig.SqlTranslationRight(this?.SugarContext?.Context); } }
+        public override string SqlTranslationLeft { get { return GBaseConfig.SqlTranslationLeft(); } }
+        public override string SqlTranslationRight { get { return GBaseConfig.SqlTranslationRight(); } }
         public override bool IsTranslationText(string name)
         {
             var result = name.IsContainsIn(UtilConstants.Space, "(", ")");
@@ -39,7 +39,7 @@ namespace SqlSugar.GBase
     }
     public partial class GBaseMethod : DefaultDbMethod, IDbMethods
     {
-        private string _dateTimeType = "datetime year to fraction(5)";
+        private string _dateTimeType = GBaseConfig.IsMySqlMode ? "datetime(5)" : "datetime year to fraction(5)";
         public GBaseExpressionContext _expressionContext = null;
 
         public GBaseMethod(GBaseExpressionContext context)
@@ -57,7 +57,7 @@ namespace SqlSugar.GBase
             var parameter = model.Args[0];
             if (this._expressionContext != null &&
                 this._expressionContext.SugarContext != null &&
-                GBaseConfig.IsMySqlMode(this._expressionContext.SugarContext.Context))
+                GBaseConfig.IsMySqlMode)
             {
                 return string.Format(" CAST({0} AS SIGNED)", parameter.MemberName);
             }
@@ -235,13 +235,15 @@ namespace SqlSugar.GBase
 
         public override string EqualTrue(string fieldName)
         {
-            return "( " + fieldName + "='t' )";
+            return GBaseConfig.IsMySqlMode
+                ? "( " + fieldName + "=1 )"
+                : "( " + fieldName + "='t' )";
         }
 
         public override string ToDate(MethodCallExpressionModel model)
         {
             var parameter = model.Args[0];
-            return string.Format(" CAST({0} AS DATETIME year to fraction(5))", parameter.MemberName);
+            return string.Format(" CAST({0} AS {1})", parameter.MemberName, GBaseConfig.IsMySqlMode ? "datetime(5)" :  "DATETIME year to fraction(5)");
         }
 
         public override string DateAddByType(MethodCallExpressionModel model)

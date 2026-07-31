@@ -6,6 +6,7 @@ namespace SqlSugar.GBase
 {
     public class GBaseConfig
     {
+        public static bool IsMySqlMode {  get; set; }
         public static string SqlTranslationLeft(SqlSugarProvider context)
         {
             return GBaseConfig.IsMySqlMode(context)

@@ -12,9 +12,35 @@ namespace SqlSugar.GBase
             {
                 return nameof(DateTimeOffset);
             }
-            else if (csharpTypeName == "Byte[]")
+            else if (csharpTypeName.ToLower() == "byte[]")
             {
                 return "blob";
+            }
+            else if (csharpTypeName.ToLower() == "double")
+            {
+                if (GBaseConfig.IsMySqlMode)
+                {
+                    return "double";
+                }
+                else
+                {
+                    return "float";
+                }
+            }
+            else if (csharpTypeName.ToLower() == "int16")
+            {
+                return "smallint";
+            }
+            else if (csharpTypeName.ToLower() == "datetime")
+            {
+                if (GBaseConfig.IsMySqlMode)
+                {
+                    return "datetime(5)";
+                }
+                else
+                {
+                    return "DATETIME YEAR TO FRACTION(5)";
+                }
             }
             else
             {

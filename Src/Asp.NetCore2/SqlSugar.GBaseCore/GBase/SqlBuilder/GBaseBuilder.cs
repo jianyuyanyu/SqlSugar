@@ -9,8 +9,8 @@ namespace SqlSugar.GBase
 {
     public class GBaseBuilder : SqlBuilderProvider
     {
-        public override string SqlTranslationLeft { get { return GBaseConfig.SqlTranslationLeft(this.Context); } }
-        public override string SqlTranslationRight { get { return GBaseConfig.SqlTranslationRight(this.Context); } }
+        public override string SqlTranslationLeft { get { return GBaseConfig.SqlTranslationLeft(); } }
+        public override string SqlTranslationRight { get { return GBaseConfig.SqlTranslationRight(); } }
         public override string GetNoTranslationColumnName(string name)
         {
             if (name.Contains("="))

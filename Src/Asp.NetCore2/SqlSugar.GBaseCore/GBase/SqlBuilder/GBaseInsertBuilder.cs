@@ -163,6 +163,10 @@ namespace SqlSugar.GBase
                 else if (type == UtilConstants.ByteArrayType)
                 {
                     string bytesString = "0x" + BitConverter.ToString((byte[])value).Replace("-", "");
+                    if (GBaseConfig.IsMySqlMode)
+                    {
+                        return string.Format("'{0}'", bytesString);
+                    }
                     return bytesString;
                 }
                 else if (type.IsEnum())
@@ -178,9 +182,9 @@ namespace SqlSugar.GBase
                 }
                 else if (type == UtilConstants.BoolType)
                 {
-                    if (GBaseConfig.IsMySqlMode(this.Context))
+                    if (GBaseConfig.IsMySqlMode)
                     {
-                        return string.Format("CAST({0} AS signed)", value.ObjToBool() ? 1 : 0);
+                        return string.Format("{0}", value.ObjToBool() ? 1 : 0);
                     }
                     return string.Format("CAST({0} AS boolean)", value.ObjToBool() ? 1 : 0);
                 }

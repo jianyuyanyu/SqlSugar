@@ -270,7 +270,7 @@ where a.tabtype in ('V') and a.tabid > 99 ";
         {
             get
             {
-                return "SELECT TOP 1  * FROM Systables";
+                return "select * from systables where tabid = 1;";
             }
         }
         #endregion
