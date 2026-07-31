@@ -1,28 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
 namespace SqlSugar.GBase
 {
     public class GBaseConfig
     {
-        public static bool IsMySqlMode {  get; set; }
-        public static string SqlTranslationLeft(SqlSugarProvider context)
+        public static string SqlTranslationLeft()
         {
-            return GBaseConfig.IsMySqlMode(context)
+            return GBaseConfig.IsMySqlMode
                 ? "`" : "";
         }
 
-        public static string SqlTranslationRight(SqlSugarProvider context)
+        public static string SqlTranslationRight()
         {
-            return GBaseConfig.IsMySqlMode(context)
+            return GBaseConfig.IsMySqlMode
                 ? "`" : "";
         }
 
-        public static bool IsMySqlMode(SqlSugarProvider context)
-        {
-            return (context != null && 
-                context.CurrentConnectionConfig.ConnectionString.Contains("sqlmode=mysql", StringComparison.CurrentCultureIgnoreCase));
-        }
+        public static bool IsMySqlMode { get; set; }
     }
 }
