@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace SqlSugar
@@ -143,6 +144,19 @@ namespace SqlSugar
                 ActionMinDate();
                 var result= string.Format(SqlTemplate, GetTableNameString, columnsString, columnParametersString);
                 result = GetMySqlIgnore(result);
+                if (this.Context.CurrentConnectionConfig?.MoreSettings?.DisableNvarchar == true) 
+                {
+                    if (this.Parameters != null) 
+                    {
+                        foreach (var item in Parameters)
+                        {
+                            if (item.DbType == System.Data.DbType.String) 
+                            {
+                                item.DbType = System.Data.DbType.AnsiString;
+                            }
+                        }
+                    }
+                }
                 return result;
             }
             else
