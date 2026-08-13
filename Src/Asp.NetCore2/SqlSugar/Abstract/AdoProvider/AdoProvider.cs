@@ -218,7 +218,14 @@ namespace SqlSugar
             {
                 try
                 {
-                    await (this.Connection as DbConnection).OpenAsync();
+                    if (this.CancellationToken != null)
+                    {
+                        await (this.Connection as DbConnection).OpenAsync(this.CancellationToken.Value);
+                    }
+                    else
+                    {
+                        await (this.Connection as DbConnection).OpenAsync();
+                    }
                 }
                 catch (Exception ex)
                 {

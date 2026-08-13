@@ -349,6 +349,131 @@ namespace SqlSugar.GBase
         {
             return new GBaseDataAdapter();
         }
+        public override async Task<DbCommand> GetCommandAsync(string sql, SugarParameter[] parameters)
+        {
+            var helper = new GBaseInsertBuilder();
+            helper.Context = this.Context;
+            GbsCommand sqlCommand = ((GbsConnection)this.Connection).CreateCommand();
+            if (parameters != null)
+            {
+                foreach (var param in parameters.OrderByDescending(it => it.ParameterName.Length))
+                {
+                    if (param.Direction == 0)
+                        param.Direction = System.Data.ParameterDirection.Input;
+                    if ((!GBaseConfig.IsMySqlMode && sql.Contains(param.ParameterName) && UtilMethods.HasBigObjectParam(param)) ||
+                        this.CommandType == CommandType.StoredProcedure)
+                    {
+                        // for oracle mode or gbase mode(not mysql mode),
+                        // could not insert value to text field directly.
+                        // need to bind parameter in the loop below.
+                        continue;
+                    }
+                    else
+                    {
+                        sql = sql.Replace(param.ParameterName, helper.FormatValue(param.Value) + "");
+                    }
+                }
+
+                foreach (var param in parameters)
+                {
+                    // loop again, only handle the big object for oracle mode and gbase mode.
+                    if ((!GBaseConfig.IsMySqlMode && sql.Contains(param.ParameterName) && UtilMethods.HasBigObjectParam(param)) ||
+                        this.CommandType == CommandType.StoredProcedure)
+                    {
+                        // for big object data, in the insert or update statements
+                        // the charactor after the @ParameterName could only be , or ) or space.
+                        // here use these characters as postfix of the parameter name.
+                        // the Replace method would only replace one field each time.
+                        sql = sql.Replace(param.ParameterName + ",", " ?, ");
+                        sql = sql.Replace(param.ParameterName + ")", " ?) ");
+                        sql = sql.Replace(param.ParameterName + " ", " ?  ");
+
+                        var gbsParam = sqlCommand.CreateParameter();
+                        gbsParam.DbType = param.DbType;
+                        gbsParam.ParameterName = param.ParameterName;
+                        gbsParam.Direction = param.Direction;
+
+                        if (UtilMethods.HasBigObjectParam(param))
+                        {
+                            // assign GbsType.
+                            switch (param.TypeName)
+                            {
+                                case "blob":
+                                    gbsParam.GbsType = GbsType.Blob;
+                                    gbsParam.Value = (param.Value == null) ? string.Empty : param.Value;
+                                    break;
+                                case "clob":
+                                    gbsParam.GbsType = GbsType.Clob;
+                                    gbsParam.Value = (param.Value == null) ? string.Empty : param.Value;
+                                    break;
+                                case "text":
+                                    gbsParam.GbsType = GbsType.Text;
+                                    gbsParam.Value = (param.Value == null) ? DBNull.Value : param.Value;
+                                    break;
+                                case "byte":
+                                default:
+                                    gbsParam.GbsType = GbsType.Byte;
+                                    gbsParam.Value = (param.Value == null) ? DBNull.Value : param.Value;
+                                    break;
+                            }
+
+                            if (param.DbType is System.Data.DbType.Binary && param.TypeName == null)
+                            {
+                                gbsParam.GbsType = GbsType.Blob;
+                                gbsParam.Value = (param.Value == null) ? string.Empty : param.Value;
+                            }
+                        }
+                        else
+                        {
+                            gbsParam.Value = (param.Value == null) ? DBNull.Value : param.Value;
+                            if (gbsParam.Value is DateTime)
+                            {
+                                gbsParam.Value = ((DateTime)gbsParam.Value).ToString("yyyy-MM-dd HH:mm:ss.fff");
+                            }
+                        }
+
+                        sqlCommand.Parameters.Add(gbsParam);
+                        if (gbsParam.Direction.IsIn(ParameterDirection.Output, ParameterDirection.InputOutput, ParameterDirection.ReturnValue))
+                        {
+                            if (this.OutputParameters == null) this.OutputParameters = new List<IDataParameter>();
+                            this.OutputParameters.RemoveAll(it => it.ParameterName == gbsParam.ParameterName);
+                            this.OutputParameters.Add(gbsParam);
+                        }
+                    }
+                }
+            }
+            sqlCommand.CommandText = sql;
+            sqlCommand.CommandType = this.CommandType;
+            sqlCommand.CommandTimeout = this.CommandTimeOut;
+            if (sqlCommand?.Parameters?.Count > 0)
+            {
+                if (this.CommandType == CommandType.StoredProcedure && parameters != null && sqlCommand.Parameters.Count == parameters.Length)
+                {
+                    // 保证存储过程参数顺序与 SugarParameter 一致
+                    for (int i = 0; i < parameters.Length; i++)
+                    {
+                        var sugarParam = parameters[i];
+                        var dbParam = sqlCommand.Parameters.Cast<DbParameter>().FirstOrDefault(p => p.ParameterName == sugarParam.ParameterName);
+                        if (dbParam != null && sqlCommand.Parameters.IndexOf(dbParam) != i)
+                        {
+                            sqlCommand.Parameters.Remove(dbParam);
+                            sqlCommand.Parameters.Insert(i, dbParam);
+                        }
+                    }
+                }
+            }
+            if (this.Transaction != null)
+            {
+                sqlCommand.Transaction = (GbsTransaction)this.Transaction;
+            }
+            //if (parameters.HasValue())
+            //{
+            //    OdbcParameter[] ipars = GetSqlParameter(parameters);
+            //    sqlCommand.Parameters.AddRange(ipars);
+            //}
+            await CheckConnectionAsync();
+            return sqlCommand!;
+        }
         public override DbCommand GetCommand(string sql, SugarParameter[] parameters)
         {
             var helper = new GBaseInsertBuilder();
