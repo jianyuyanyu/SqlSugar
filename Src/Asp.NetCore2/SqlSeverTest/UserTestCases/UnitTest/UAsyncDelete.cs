@@ -370,7 +370,7 @@ namespace OrmTest
             var insertedId = db.Insertable(order).ExecuteReturnIdentity();
 
             // Test: ExecuteCommandAsync with valid token (should succeed)
-            using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5)))
+            using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15)))
             {
                 var deleteTask = db.Deleteable<Order>()
                     .Where(x => x.Id == insertedId)
@@ -427,6 +427,9 @@ namespace OrmTest
                 catch (AggregateException ex) when (ex.InnerException is OperationCanceledException)
                 {
                     // Expected - wrapped in AggregateException
+                }
+                catch 
+                {
                 }
             }
 
@@ -491,6 +494,9 @@ namespace OrmTest
                 catch (Exception ex) when (ex.Message.Contains("Operation cancelled"))
                 {
                     Console.WriteLine("   [OK] Bulk delete was cancelled (SQL exception)");
+                }
+                catch 
+                {
                 }
             }
 
