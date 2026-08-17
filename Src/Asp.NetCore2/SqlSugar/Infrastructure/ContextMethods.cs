@@ -829,6 +829,10 @@ namespace SqlSugar
                         {
                             addItem = Convert.ToDateTime(addItem).ToString("yyyy-MM-dd");
                         }
+                        else if (addItem != null && (underType?.FullName is "System.TimeSpan" || underType?.FullName == "System.TimeOnly"))
+                        {
+                            addItem = Convert.ToDateTime(addItem).ToString("HH:mm:ss");
+                        }
                         else if (UtilMethods.GetUnderType(prop.PropertyType).IsEnum() && addItem is decimal)
                         {
                             if (prop.PropertyType.IsEnum() == false && addItem == null)
