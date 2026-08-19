@@ -14,7 +14,7 @@
     <tags>Asp.net core GBase orm 南大通用</tags>
     <dependencies>
       <group targetFramework=".NETStandard2.1">
-		  <dependency id="GBase.DataProvider" version="1.9.0" />
+		  <dependency id="GBase.DataProvider" version="1.11" />
       </group>
     </dependencies>
   </metadata>
